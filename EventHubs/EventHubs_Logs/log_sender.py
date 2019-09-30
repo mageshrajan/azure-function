@@ -1,6 +1,8 @@
 import json
+import azure.functions as func
 
-def main(event):
-    msg_body = event.get_body()
-    msg = json.dumps(msg_body.decode('uft-8'))
-    print(msg)
+def main(event: func.EventHubEvent):
+    logging.info('S247 Function triggered to process a message: ', event.get_body())
+    logging.info('  EnqueuedTimeUtc =', event.enqueued_time)
+    logging.info('  SequenceNumber =', event.sequence_number)
+    logging.info('  Offset =', event.offset)
