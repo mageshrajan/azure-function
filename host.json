@@ -1,8 +1,5 @@
 {
   "version": "2.0",
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle"
-  },
   "eventHub": {
     "maxBatchSize": 64,
     "prefetchCount": 256,
