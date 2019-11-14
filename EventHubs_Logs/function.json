@@ -5,6 +5,7 @@
      "type": "eventHubTrigger",
      "name": "eventHubMessages",
      "direction": "in",
+     "path" : "insights-operational-logs",
      "eventHubName": "insights-operational-logs",
      "connection": "AzureEventHubConnectionString",
      "cardinality": "many",
