@@ -1,0 +1,23 @@
+{
+ "scriptFile": "log_sender.py",
+ "bindings": [
+   {
+     "type": "eventHubTrigger",
+     "name": "eventHubMessages",
+     "direction": "in",
+     "path" : "s247-operational-logs",
+     "eventHubName": "s247-operational-logs",
+     "connection": "AzureEventHubConnectionString",
+     "cardinality": "many",
+     "consumerGroup": "$Default"
+   },
+  
+   {
+     "type": "blob",
+     "name": "outputBlob",
+     "eventHubName": "s247-azureaudit-failover/{rand-guid}",
+     "connection": "StorageConnectionString",
+     "direction": "out"
+   }
+ ]
+}
