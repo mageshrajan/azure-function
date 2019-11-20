@@ -10,14 +10,6 @@
      "connection": "AzureEventHubConnectionString",
      "cardinality": "many",
      "consumerGroup": "$Default"
-   },
-  
-   {
-     "type": "blob",
-     "name": "outputBlob",
-     "eventHubName": "s247-azureaudit-failover/{rand-guid}",
-     "connection": "StorageConnectionString",
-     "direction": "out"
    }
  ]
 }
