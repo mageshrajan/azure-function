@@ -1,4 +1,4 @@
-import json
+import json, logging
 import azure.functions as func
 
 def main(event: func.EventHubEvent):
