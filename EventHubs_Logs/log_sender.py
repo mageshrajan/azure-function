@@ -1,6 +1,6 @@
 
 import sys, os, re, gzip, json, urllib.parse, urllib.request, traceback, datetime, calendar, logging
-import azure.functions as func
+#import azure.functions as func
 from base64 import b64decode
 
 
@@ -70,8 +70,7 @@ def main(event: func.EventHubEvent):
     logging.info('S247 Function triggered to process a message: %s', event.get_body().decode('utf-8'))
     try:
         payload = json.loads(event.get_body().decode('utf-8'))
-
-        log_events = payload['records']
+        log_events = payload[0]['records']
         if 'jsonPath' in logtype_config:
             parsed_lines, log_size = json_log_parser(log_events)
 
