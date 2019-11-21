@@ -1,6 +1,6 @@
 
 import sys, os, re, gzip, json, urllib.parse, urllib.request, traceback, datetime, calendar, logging
-#import azure.functions as func
+import azure.functions as func
 from base64 import b64decode
 
 
