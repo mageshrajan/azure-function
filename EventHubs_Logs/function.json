@@ -3,7 +3,7 @@
  "bindings": [
    {
      "type": "eventHubTrigger",
-     "name": "event",
+     "name": "eventMessages",
      "direction": "in",
      "path" : "s247-operational-logs",
      "eventHubName": "s247-operational-logs",
