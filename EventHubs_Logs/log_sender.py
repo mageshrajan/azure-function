@@ -28,7 +28,7 @@ def get_json_value(obj, key, type):
         if type and type == 'json-object':
             arr_json = []
             for child_key in obj[key]:
-                arr_json.append({key+'.key' : child_key, key+'.value': obj[key][child_key]})
+                arr_json.append({'key' : child_key, 'value': obj[key][child_key]})
             return arr_json
         else:
             return obj[key]
