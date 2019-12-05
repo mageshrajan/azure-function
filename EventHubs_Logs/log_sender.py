@@ -8,14 +8,9 @@ logtype_config = json.loads(b64decode(os.environ['logTypeConfig']).decode('utf-8
 
 s247_datetime_format_string = logtype_config['dateFormat']
 
-if 'unix' not in s247_datetime_format_string:
-    is_year_present = True if '%y' in s247_datetime_format_string or '%Y' in s247_datetime_format_string else False
-    if is_year_present is False:
-        s247_datetime_format_string = s247_datetime_format_string+ ' %Y'
-
 def get_timestamp(datetime_string):
     try:
-        datetime_data = datetime.datetime.strptime(datetime_string, s247_datetime_format_string)
+        datetime_data = datetime.datetime.strptime(datetime_string[:26], s247_datetime_format_string)
         timestamp = calendar.timegm(datetime_data.utctimetuple()) *1000 + int(datetime_data.microsecond/1000)
         return int(timestamp)
     except Exception as e:
@@ -28,9 +23,15 @@ def is_filters_matched(formatted_line):
                 return False
     return True
 
-def get_json_value(obj, key):
+def get_json_value(obj, key, type):
     if key in obj:
-        return obj[key]
+        if type and type == 'json-object':
+            arr_json = []
+            for child_key in obj[key]:
+                arr_json.append({key+'.key' : child_key, key+'.value': obj[key][child_key]})
+            return arr_json
+        else:
+            return obj[key]
     elif '.' in key:
         parent_key = key[:key.index('.')]
         child_key = key[key.index('.')+1:]
@@ -42,7 +43,7 @@ def json_log_parser(lines_read):
     for event_obj in lines_read:
         formatted_line = {}
         for path_obj in logtype_config['jsonPath']:
-            value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'])
+            value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'], path_obj['type'] if 'type' in path_obj else None)
             if value:
                 formatted_line[path_obj['name']] = value 
                 log_size+= len(str(value))
