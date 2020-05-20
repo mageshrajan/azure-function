@@ -23,7 +23,7 @@ def is_filters_matched(formatted_line):
                 return False
     return True
 
-def get_json_value(obj, key, type):
+def get_json_value(obj, key, type=None):
     if key in obj:
         if type and type == 'json-object':
             arr_json = []
@@ -72,6 +72,7 @@ def main(eventMessages: func.EventHubEvent):
     logging.info('S247 Function triggered to process a message: %s', eventMessages.get_body().decode('utf-8'))
     try:
         payload = json.loads(eventMessages.get_body().decode('utf-8'))
+        print(payload)
         log_events = payload[0]['records']
         if 'jsonPath' in logtype_config:
             parsed_lines, log_size = json_log_parser(log_events)
