@@ -73,6 +73,7 @@ def main(eventMessages: func.EventHubEvent):
         log_events = payload[0]['records']
         log_category = (log_events[0]['category']).replace('-', '_')
         print("log_category" + " : "+ log_category)
+        log_category = 'S247_'+log_category
         if log_category in os.environ:
             print("log_category found in input arguments")
             logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
