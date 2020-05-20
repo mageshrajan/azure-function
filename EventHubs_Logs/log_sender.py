@@ -3,6 +3,8 @@ import sys, os, re, gzip, json, urllib.parse, urllib.request, traceback, datetim
 import azure.functions as func
 from base64 import b64decode
 
+logtype_config = None
+s247_datetime_format_string = None
 
 def get_timestamp(datetime_string):
     try:
