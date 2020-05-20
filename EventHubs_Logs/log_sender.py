@@ -69,7 +69,7 @@ def main(eventMessages: func.EventHubEvent):
     try:
         payload = json.loads(eventMessages.get_body().decode('utf-8'))
         log_events = payload[0]['records']
-        log_category = log_events[0]['category']
+        log_category = (log_events[0]['category']).replace('-', '_')
         print("log_category" + " : "+ log_category)
         if log_category in os.environ:
             print("log_category found in input arguments")
