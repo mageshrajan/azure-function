@@ -36,7 +36,7 @@ def get_json_value(obj, key, type=None):
         return get_json_value(obj[parent_key], child_key)
 
 def json_log_parser(lines_read):
-    log_size = 0;
+    log_size = 0
     parsed_lines = []
     for event_obj in lines_read:
         formatted_line = {}
@@ -67,8 +67,8 @@ def send_logs_to_s247(gzipped_parsed_lines, log_size):
         logging.info('%s :Problem in uploading to site24x7 status %s, Reason : %s', dict_responseHeaders['x-uploadid'], s247_response.status, s247_response.read())
 
 def main(eventMessages: func.EventHubEvent):
-    logging.info('S247 Function triggered to process a message: %s', eventMessages.get_body().decode('utf-8'))
     try:
+        global logtype_config, s247_datetime_format_string
         payload = json.loads(eventMessages.get_body().decode('utf-8'))
         log_events = payload[0]['records']
         log_category = (log_events[0]['category']).replace('-', '_')
