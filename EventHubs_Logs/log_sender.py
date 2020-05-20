@@ -4,10 +4,6 @@ import azure.functions as func
 from base64 import b64decode
 
 
-logtype_config = json.loads(b64decode(os.environ['logTypeConfig']).decode('utf-8'))
-
-s247_datetime_format_string = logtype_config['dateFormat']
-
 def get_timestamp(datetime_string):
     try:
         datetime_data = datetime.datetime.strptime(datetime_string[:26], s247_datetime_format_string)
@@ -72,8 +68,18 @@ def main(eventMessages: func.EventHubEvent):
     logging.info('S247 Function triggered to process a message: %s', eventMessages.get_body().decode('utf-8'))
     try:
         payload = json.loads(eventMessages.get_body().decode('utf-8'))
-        print(payload)
         log_events = payload[0]['records']
+        log_category = log_events[0]['category']
+        print("log_category" + " : "+ log_category)
+        if log_category in os.environ:
+            print("log_category found in input arguments")
+            logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
+            s247_datetime_format_string = logtype_config['dateFormat']
+        else:
+            logtype_config = json.loads(b64decode(os.environ['logTypeConfig']).decode('utf-8'))
+            s247_datetime_format_string = logtype_config['dateFormat']
+
+
         if 'jsonPath' in logtype_config:
             parsed_lines, log_size = json_log_parser(log_events)
 
