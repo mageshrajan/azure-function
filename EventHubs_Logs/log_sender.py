@@ -69,9 +69,10 @@ def send_logs_to_s247(gzipped_parsed_lines, log_size):
 def main(eventMessages: func.EventHubEvent):
     try:
         global logtype_config, s247_datetime_format_string
+        print('eventMessages before : {}', eventMessages)
         if type(eventMessages) != list:
             eventMessages = [eventMessages]
-        
+        print('eventMessages after: {}', eventMessages)
         for eventMessage in eventMessages:
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
             log_events = payload[0]['records']
