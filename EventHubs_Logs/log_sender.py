@@ -69,28 +69,30 @@ def send_logs_to_s247(gzipped_parsed_lines, log_size):
 def main(eventMessages: func.EventHubEvent):
     try:
         global logtype_config, s247_datetime_format_string
-        print(eventMessages)
-        print(type(eventMessages))
-        payload = json.loads(eventMessages.get_body().decode('utf-8'))
-        log_events = payload[0]['records']
-        log_category = (log_events[0]['category']).replace('-', '_')
-        print("log_category" + " : "+ log_category)
-        log_category = 'S247_'+log_category
-        if log_category in os.environ:
-            print("log_category found in input arguments")
-            logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
-            s247_datetime_format_string = logtype_config['dateFormat']
-        else:
-            logtype_config = json.loads(b64decode(os.environ['logTypeConfig']).decode('utf-8'))
-            s247_datetime_format_string = logtype_config['dateFormat']
-
-
-        if 'jsonPath' in logtype_config:
-            parsed_lines, log_size = json_log_parser(log_events)
-
-        if parsed_lines:
-            gzipped_parsed_lines = gzip.compress(json.dumps(parsed_lines).encode())
-            send_logs_to_s247(gzipped_parsed_lines, log_size)
+        if type(eventMessages) != list:
+            eventMessages = [eventMessages]
+        
+        for eventMessage in eventMessages:
+            payload = json.loads(eventMessage.get_body().decode('utf-8'))
+            log_events = payload[0]['records']
+            log_category = (log_events[0]['category']).replace('-', '_')
+            print("log_category" + " : "+ log_category)
+            log_category = 'S247_'+log_category
+            if log_category in os.environ:
+                print("log_category found in input arguments")
+                logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
+                s247_datetime_format_string = logtype_config['dateFormat']
+            else:
+                logtype_config = json.loads(b64decode(os.environ['logTypeConfig']).decode('utf-8'))
+                s247_datetime_format_string = logtype_config['dateFormat']
+    
+    
+            if 'jsonPath' in logtype_config:
+                parsed_lines, log_size = json_log_parser(log_events)
+    
+            if parsed_lines:
+                gzipped_parsed_lines = gzip.compress(json.dumps(parsed_lines).encode())
+                send_logs_to_s247(gzipped_parsed_lines, log_size)
     except Exception as e:
         print(e)
         raise e
