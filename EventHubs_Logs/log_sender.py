@@ -74,6 +74,8 @@ def main(eventMessages: func.EventHubEvent):
         print('eventMessages length :', len(eventMessages))
         for eventMessage in eventMessages:
             print('eventMessages :', eventMessage)
+            print('eventMessages type :', type(eventMessage))
+            print('eventMessages body :', eventMessage.get_body())
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
             log_events = payload[0]['records']
             log_category = (log_events[0]['category']).replace('-', '_')
@@ -95,5 +97,5 @@ def main(eventMessages: func.EventHubEvent):
                 gzipped_parsed_lines = gzip.compress(json.dumps(parsed_lines).encode())
                 send_logs_to_s247(gzipped_parsed_lines, log_size)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
         raise e
