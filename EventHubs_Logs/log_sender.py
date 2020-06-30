@@ -69,15 +69,13 @@ def send_logs_to_s247(gzipped_parsed_lines, log_size):
 def main(eventMessages: func.EventHubEvent):
     try:
         global logtype_config, s247_datetime_format_string
+        cardinality = 'many'
         if type(eventMessages) != list:
             eventMessages = [eventMessages]
-        print('eventMessages length :', len(eventMessages))
+            cardinality = 'one'
         for eventMessage in eventMessages:
-            print('eventMessages :', eventMessage)
-            print('eventMessages type :', type(eventMessage))
-            print('eventMessages body :', eventMessage.get_body())
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
-            log_events = payload[0]['records']
+            log_events = payload['records'] if cardinality == 'many' else payload[0]['records'] 
             log_category = (log_events[0]['category']).replace('-', '_')
             print("log_category" + " : "+ log_category)
             log_category = 'S247_'+log_category
