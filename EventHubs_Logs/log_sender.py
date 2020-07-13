@@ -39,23 +39,27 @@ def json_log_parser(lines_read):
     log_size = 0
     parsed_lines = []
     for event_obj in lines_read:
-        formatted_line = {}
-        for path_obj in logtype_config['jsonPath']:
-            value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'], path_obj['type'] if 'type' in path_obj else None)
-            if value:
-                formatted_line[path_obj['name']] = value 
-                log_size+= len(str(value))
-        if not is_filters_matched(formatted_line):
-            continue
-        formatted_line['_zl_timestamp'] = get_timestamp(formatted_line[logtype_config['dateField']])
-        if 'resourceId' in event_obj:
-            formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
-        parsed_lines.append(formatted_line)
+        try:
+            formatted_line = {}
+            for path_obj in logtype_config['jsonPath']:
+                value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'], path_obj['type'] if 'type' in path_obj else None)
+                if value:
+                    formatted_line[path_obj['name']] = value 
+                    log_size+= len(str(value))
+            if not is_filters_matched(formatted_line):
+                continue
+            formatted_line['_zl_timestamp'] = get_timestamp(formatted_line[logtype_config['dateField']])
+            if 'resourceId' in event_obj:
+                formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
+            parsed_lines.append(formatted_line)
+        except Exception as e:
+            print('unable to parse event message : '+str(e))
+            pass
     return parsed_lines, log_size
 
 def send_logs_to_s247(gzipped_parsed_lines, log_size):
     header_obj = {'X-DeviceKey': logtype_config['apiKey'], 'X-LogType': logtype_config['logType'],
-                  'X-StreamMode' :1, 'Log-Size': log_size, 'Content-Type' : 'application/json', 'Content-Encoding' : 'gzip', 'User-Agent' : 'AWS-Lambda'
+                  'X-StreamMode' :1, 'Log-Size': log_size, 'Content-Type' : 'application/json', 'Content-Encoding' : 'gzip', 'User-Agent' : 'AZURE-Function'
     }
     upload_url = 'https://'+logtype_config['uploadDomain']+'/upload'
     request = urllib.request.Request(upload_url, headers=header_obj)
