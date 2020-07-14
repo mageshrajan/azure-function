@@ -79,10 +79,13 @@ def main(eventMessages: func.EventHubEvent):
             cardinality = 'one'
         for eventMessage in eventMessages:
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
-            log_events = payload['records'] if cardinality == 'many' else payload[0]['records'] 
-            log_category = (log_events[0]['category']).replace('-', '_')
-            print("log_category" + " : "+ log_category)
-            log_category = 'S247_'+log_category
+            log_events = payload['records'] if cardinality == 'many' else payload[0]['records']
+            log_category = ''
+            if 'category' in log_events[0]: 
+                log_category = (log_events[0]['category']).replace('-', '_')
+                print("log_category" + " : "+ log_category)
+                log_category = 'S247_'+log_category
+
             if log_category in os.environ:
                 print("log_category found in input arguments")
                 print("log event : ",log_events)
