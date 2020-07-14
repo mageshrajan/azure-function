@@ -53,7 +53,8 @@ def json_log_parser(lines_read):
                 formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
             parsed_lines.append(formatted_line)
         except Exception as e:
-            print('unable to parse event message : '+str(e))
+            print('unable to parse event message : ',event_obj)
+            traceback.print_exc()
             pass
     return parsed_lines, log_size
 
@@ -80,6 +81,8 @@ def main(eventMessages: func.EventHubEvent):
         for eventMessage in eventMessages:
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
             log_events = payload['records'] if cardinality == 'many' else payload[0]['records']
+            print("log event : ",log_events)
+
             log_category = ''
             if 'category' in log_events[0]: 
                 log_category = (log_events[0]['category']).replace('-', '_')
@@ -88,7 +91,6 @@ def main(eventMessages: func.EventHubEvent):
 
             if log_category in os.environ:
                 print("log_category found in input arguments")
-                print("log event : ",log_events)
                 logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
                 s247_datetime_format_string = logtype_config['dateFormat']
             else:
