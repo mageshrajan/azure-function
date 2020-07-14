@@ -22,7 +22,7 @@ def is_filters_matched(formatted_line):
     return True
 
 def get_json_value(obj, key, datatype=None):
-    if key in obj:
+    if key in obj or key.lower() in obj:
         if datatype and datatype == 'json-object':
             arr_json = []
             child_obj = obj[key]
@@ -33,11 +33,14 @@ def get_json_value(obj, key, datatype=None):
                 arr_json.append({'key' : child_key, 'value': str(child_obj[child_key])})
             return arr_json
         else:
-            return obj[key]
+            return obj[key] if key in obj else obj[key.lower()]
     elif '.' in key:
         parent_key = key[:key.index('.')]
         child_key = key[key.index('.')+1:]
-        return get_json_value(obj[parent_key], child_key)
+        child_obj = obj[parent_key]
+        if type(child_obj) is str:
+            child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+        return get_json_value(child_obj, child_key)
 
 def json_log_parser(lines_read):
     log_size = 0
@@ -111,6 +114,4 @@ def main(eventMessages: func.EventHubEvent):
     except Exception as e:
         traceback.print_exc()
         raise e
-    
-    
     
