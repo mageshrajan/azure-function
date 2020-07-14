@@ -85,6 +85,7 @@ def main(eventMessages: func.EventHubEvent):
             log_category = 'S247_'+log_category
             if log_category in os.environ:
                 print("log_category found in input arguments")
+                print("log event : ",log_events)
                 logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
                 s247_datetime_format_string = logtype_config['dateFormat']
             else:
