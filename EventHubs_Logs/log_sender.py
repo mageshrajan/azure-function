@@ -21,12 +21,16 @@ def is_filters_matched(formatted_line):
                 return False
     return True
 
-def get_json_value(obj, key, type=None):
+def get_json_value(obj, key, datatype=None):
     if key in obj:
-        if type and type == 'json-object':
+        if datatype and datatype == 'json-object':
             arr_json = []
-            for child_key in obj[key]:
-                arr_json.append({'key' : child_key, 'value': str(obj[key][child_key])})
+            child_obj = obj[key]
+            if type(child_obj) is str:
+                child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+
+            for child_key in child_obj:
+                arr_json.append({'key' : child_key, 'value': str(child_obj[child_key])})
             return arr_json
         else:
             return obj[key]
@@ -107,3 +111,6 @@ def main(eventMessages: func.EventHubEvent):
     except Exception as e:
         traceback.print_exc()
         raise e
+    
+    
+    
