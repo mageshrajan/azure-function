@@ -55,7 +55,7 @@ def json_log_parser(lines_read):
                     log_size+= len(str(value))
             if not is_filters_matched(formatted_line):
                 continue
-            formatted_line['_zl_timestamp'] = get_timestamp(formatted_line[logtype_config['dateField']])
+            formatted_line['_zl_timestamp'] = get_timestamp(event_obj[logtype_config['dateField']])
             if 'resourceId' in event_obj:
                 formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
             parsed_lines.append(formatted_line)
