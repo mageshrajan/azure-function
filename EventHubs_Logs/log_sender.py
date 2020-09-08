@@ -58,6 +58,7 @@ def json_log_parser(lines_read):
             formatted_line['_zl_timestamp'] = get_timestamp(event_obj[logtype_config['dateField']])
             if 'resourceId' in event_obj:
                 formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
+                event_obj['resourceId'] = event_obj['resourceId'].lower()
             parsed_lines.append(formatted_line)
         except Exception as e:
             print('unable to parse event message : ',event_obj)
