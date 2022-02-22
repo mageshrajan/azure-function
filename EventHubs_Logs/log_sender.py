@@ -37,10 +37,13 @@ def get_json_value(obj, key, datatype=None):
     elif '.' in key:
         parent_key = key[:key.index('.')]
         child_key = key[key.index('.')+1:]
-        child_obj = obj[parent_key if parent_key in obj else parent_key.capitalize()]
-        if type(child_obj) is str:
-            child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
-        return get_json_value(child_obj, child_key)
+        try:
+            child_obj = obj[parent_key if parent_key in obj else parent_key.capitalize()]
+            if type(child_obj) is str:
+                child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+            return get_json_value(child_obj, child_key)
+        except KeyError:
+            return None
 
 def json_log_parser(lines_read):
     log_size = 0
