@@ -6,7 +6,8 @@ logtype_config = None
 s247_datetime_format_string = None
 
 #if 'debugMode' in os.environ and os.environ['debugMode']:
-logging.getLogger().setLevel(logging.DEBUG)
+#logging.getLogger().setLevel(logging.DEBUG)
+logging.Logger.root.level = 10
 
 def get_timestamp(datetime_string):
     try:
