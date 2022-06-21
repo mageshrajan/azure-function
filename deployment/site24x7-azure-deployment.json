@@ -1,0 +1,192 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+	    "defaultValue": "Site24x7AzureLogs",
+            "type": "string"
+        },
+	"logTypeConfig": {
+            "defaultValue": "Enter Log Type Config String",
+            "type": "String"
+        }
+    },
+    "variables": {
+	"suffix": "[substring(toLower(uniqueString(resourceGroup().id, resourceGroup().location)),0,5)]",
+	"subscriptionid": "[subscription().subscriptionId]",
+        "location" :  "[resourceGroup().location]",
+        "linuxFxVersion" : "DOCKER|mcr.microsoft.com/azure-functions/python:4-python3.9-appservice",
+	"funcStorageName": "[tolower(concat(substring(parameters('name'), 0, min(length(parameters('name')),16)), 'stg', variables('suffix')))]",
+        "functionName" : "[concat(parameters('name'), '-Function-', variables('suffix'))]",
+        "serverFarmName" : "[concat(parameters('name'), '-AppServicePlan-', variables('suffix'))]",
+        "namespaces" :"[concat(parameters('name'), '-NameSpace-', variables('suffix'))]",
+        "RootManageSharedAccessKey_name" : "RootManageSharedAccessKey",
+        "eventhubs_logs_name" : "Site24x7-Operational-Logs"
+     },
+    "resources": [
+	{
+            "type": "Microsoft.Web/serverfarms",
+            "apiVersion": "2018-02-01",
+            "name": "[variables('serverFarmName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "B1",
+                "tier": "Basic",
+                "size": "B1"
+            },
+            "kind": "linux",
+            "properties": {
+                "perSiteScaling": false,
+                "maximumElasticWorkerCount": 1,
+                "isSpot": false,
+                "reserved": true,
+                "isXenon": false,
+                "hyperV": false,
+                "targetWorkerCount": 0,
+                "targetWorkerSizeId": 0
+            }
+        },
+	{
+            "type": "Microsoft.EventHub/namespaces",
+            "sku": {
+                "name": "Standard",
+                "tier": "Standard",
+                "capacity": 1
+            },
+            "name": "[variables('namespaces')]",
+            "apiVersion": "2017-04-01",
+            "location": "[resourceGroup().location]",
+            "tags": {},
+            "scale": null,
+            "properties": {
+                "isAutoInflateEnabled": true,
+                "maximumThroughputUnits": 20,
+                "provisioningState": "Succeeded",
+                "metricId": "[concat('c088dc46-d692-42ad-a4b6-9a542d28ad2a:s247azurelogs', variables('namespaces'))]",
+                "serviceBusEndpoint": "[concat('https://', variables('namespaces'),'.servicebus.windows.net:443/')]"
+            },
+            "dependsOn": []
+        },
+	{
+            "apiVersion": "2019-06-01",
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[ variables('funcStorageName')]",
+            "location": "[variables('location')]",
+            "sku": {
+                "name": "Standard_LRS"
+            },
+            "properties": {
+                "supportsHttpsTrafficOnly": false,
+		"encryption": {
+                    "services": {
+                        "file": {
+                            "enabled": true
+                        },
+                        "blob": {
+                            "enabled": true
+                        }
+                    },
+                    "keySource": "Microsoft.Storage"
+                }
+            }
+        },
+        {
+            "apiVersion": "2018-11-01",
+            "name": "[variables('functionName')]",
+            "type": "Microsoft.Web/sites",
+            "kind": "functionapp,linux",
+            "location": "[variables('location')]",
+            "tags": {},
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/',  variables('funcStorageName'))]"
+            ],
+            "properties": {
+                "name": "[variables('functionName')]",
+                "siteConfig": {
+                    "appSettings": [
+                        {"name": "FUNCTIONS_WORKER_RUNTIME", "value": "python"},
+                        {"name": "FUNCTIONS_EXTENSION_VERSION", "value": "~4"},
+			{"name": "logTypeConfig", "value" : "[parameters('logTypeConfig')]"},
+                        {
+                            "name": "AzureWebJobsStorage",
+                            "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('funcStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts',  variables('funcStorageName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
+                        },
+                        {
+			    "name": "AzureEventHubConnectionString", 
+                            "value" : "[listkeys(resourceId('Microsoft.EventHub/namespaces/authorizationRules', variables('namespaces'), variables('RootManageSharedAccessKey_name')), '2017-04-01').primaryConnectionString]"
+                        }
+                    ],
+                    "linuxFxVersion": "[variables('linuxFxVersion')]",
+                    "alwaysOn": false
+                },
+                "serverFarmId": "[concat('/subscriptions/', variables('subscriptionId'),'/resourcegroups/', resourceGroup().name, '/providers/Microsoft.Web/serverfarms/', variables('serverFarmName'))]",
+                "clientAffinityEnabled": false
+            },
+            "resources": [
+                {
+                    "apiVersion": "2018-11-01",
+                    "name": "web",
+                    "type": "sourcecontrols",
+                    "dependsOn": [
+                      "[resourceId('Microsoft.Web/sites/', variables('functionName'))]"
+                    ],
+                    "properties": {
+                        "RepoUrl": "https://github.com/magesh007/azure-function.git",
+                        "branch": "master",
+                        "publishRunbook": true,
+                        "IsManualIntegration": true
+                    }
+               }
+            ]
+        },
+	{
+            "type": "Microsoft.EventHub/namespaces/AuthorizationRules",
+            "name": "[concat(variables('namespaces'), '/', variables('RootManageSharedAccessKey_name'))]",
+            "apiVersion": "2017-04-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "properties": {
+                "rights": [
+                    "Listen",
+                    "Manage",
+                    "Send"
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', variables('namespaces'))]"
+            ]
+        },
+        {
+            "type": "Microsoft.EventHub/namespaces/eventhubs",
+            "name": "[concat(variables('namespaces'), '/', variables('eventhubs_logs_name'))]",
+            "apiVersion": "2017-04-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "properties": {
+                "messageRetentionInDays": 7,
+                "partitionCount": 4,
+                "status": "Active",
+                "partitionIds": [
+                    "0",
+                    "1",
+                    "2",
+                    "3"
+                ]
+            },
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', variables('namespaces'))]"
+            ]
+        },
+	{
+            "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+            "name": "[concat(variables('namespaces'), '/', variables('eventhubs_logs_name'), '/', '$Default')]",
+            "apiVersion": "2017-04-01",
+            "location": "[resourceGroup().location]",
+            "scale": null,
+            "dependsOn": [
+                "[resourceId('Microsoft.EventHub/namespaces', variables('namespaces'))]",
+                "[resourceId('Microsoft.EventHub/namespaces/eventhubs', variables('namespaces'), variables('eventhubs_logs_name'))]"
+            ]
+        }
+    ]
+}
