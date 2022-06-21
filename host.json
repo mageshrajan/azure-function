@@ -16,5 +16,11 @@
   "functions": [
     "EventHubs_Logs"
   ],
+  "logging": {
+    "fileLoggingMode": "always",
+    "logLevel": {
+      "default": "Debug"
+    }
+  }, 
   "functionTimeout": "00:05:00"
 }
