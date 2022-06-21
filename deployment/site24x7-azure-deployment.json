@@ -107,6 +107,7 @@
                         {"name": "FUNCTIONS_WORKER_RUNTIME", "value": "python"},
                         {"name": "FUNCTIONS_EXTENSION_VERSION", "value": "~4"},
 			{"name": "logTypeConfig", "value" : "[parameters('logTypeConfig')]"},
+			{"name": "debugMode", "value" : "False"},
                         {
                             "name": "AzureWebJobsStorage",
                             "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', variables('funcStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts',  variables('funcStorageName')), '2019-06-01').keys[0].value,';EndpointSuffix=','core.windows.net')]"
