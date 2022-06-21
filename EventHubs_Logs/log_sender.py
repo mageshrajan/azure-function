@@ -1,4 +1,3 @@
-
 import sys, os, re, gzip, json, urllib.parse, urllib.request, traceback, datetime, calendar, logging
 import azure.functions as func
 from base64 import b64decode
@@ -6,20 +5,26 @@ from base64 import b64decode
 logtype_config = None
 s247_datetime_format_string = None
 
+if 'debugMode' in os.environ and os.environ['debugMode']:
+    logging.getLogger().setLevel(logging.DEBUG)
+
 def get_timestamp(datetime_string):
     try:
         datetime_data = datetime.datetime.strptime(datetime_string[:26], s247_datetime_format_string)
-        timestamp = calendar.timegm(datetime_data.utctimetuple()) *1000 + int(datetime_data.microsecond/1000)
+        timestamp = calendar.timegm(datetime_data.utctimetuple()) * 1000 + int(datetime_data.microsecond / 1000)
         return int(timestamp)
     except Exception as e:
         return 0
 
+
 def is_filters_matched(formatted_line):
     if 'filterConfig' in logtype_config:
         for config in logtype_config['filterConfig']:
-            if config in formatted_line and (filter_config[config]['match'] ^ (formatted_line[config] in filter_config[config]['values'])):
+            if config in formatted_line and (
+                    filter_config[config]['match'] ^ (formatted_line[config] in filter_config[config]['values'])):
                 return False
     return True
+
 
 def get_json_value(obj, key, datatype=None):
     if key in obj or key.lower() in obj:
@@ -27,20 +32,20 @@ def get_json_value(obj, key, datatype=None):
             arr_json = []
             child_obj = obj[key]
             if type(child_obj) is str:
-                child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+                child_obj = json.loads(child_obj.replace('\\', '\\\\'), strict=False)
 
             for child_key in child_obj:
-                arr_json.append({'key' : child_key, 'value': str(child_obj[child_key])})
+                arr_json.append({'key': child_key, 'value': str(child_obj[child_key])})
             return arr_json
         else:
             return obj[key] if key in obj else obj[key.lower()]
     elif '.' in key:
         parent_key = key[:key.index('.')]
-        child_key = key[key.index('.')+1:]
+        child_key = key[key.index('.') + 1:]
         try:
             child_obj = obj[parent_key if parent_key in obj else parent_key.capitalize()]
             if type(child_obj) is str:
-                child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+                child_obj = json.loads(child_obj.replace('\\', '\\\\'), strict=False)
             return get_json_value(child_obj, child_key)
         except KeyError:
             return None
@@ -48,39 +53,47 @@ def get_json_value(obj, key, datatype=None):
 def json_log_parser(lines_read):
     log_size = 0
     parsed_lines = []
+    logging.debug("S247-DEBUG : type(log_events) : %r", type(log_events))
     for event_obj in lines_read:
         try:
+            logging.debug("S247-DEBUG : event_obj : %r", event_obj)
             formatted_line = {}
             for path_obj in logtype_config['jsonPath']:
-                value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'], path_obj['type'] if 'type' in path_obj else None)
+                value = get_json_value(event_obj, path_obj['key' if 'key' in path_obj else 'name'],
+                                       path_obj['type'] if 'type' in path_obj else None)
                 if value:
-                    formatted_line[path_obj['name']] = value 
-                    log_size+= len(str(value))
+                    formatted_line[path_obj['name']] = value
+                    log_size += len(str(value))
             if not is_filters_matched(formatted_line):
                 continue
             formatted_line['_zl_timestamp'] = get_timestamp(event_obj[logtype_config['dateField']])
             if 'resourceId' in event_obj:
                 formatted_line['s247agentuid'] = event_obj['resourceId'].split('/')[4]
                 event_obj['resourceId'] = event_obj['resourceId'].lower()
+            logging.debug("S247-DEBUG : formatted_line : %r", formatted_line)
             parsed_lines.append(formatted_line)
         except Exception as e:
-            print('unable to parse event message : ',event_obj)
+            logging.debug('unable to parse event message : ', event_obj)
             traceback.print_exc()
             pass
     return parsed_lines, log_size
 
+
 def send_logs_to_s247(gzipped_parsed_lines, log_size):
     header_obj = {'X-DeviceKey': logtype_config['apiKey'], 'X-LogType': logtype_config['logType'],
-                  'X-StreamMode' :1, 'Log-Size': log_size, 'Content-Type' : 'application/json', 'Content-Encoding' : 'gzip', 'User-Agent' : 'AZURE-Function'
-    }
-    upload_url = 'https://'+logtype_config['uploadDomain']+'/upload'
+                  'X-StreamMode': 1, 'Log-Size': log_size, 'Content-Type': 'application/json',
+                  'Content-Encoding': 'gzip', 'User-Agent': 'AZURE-Function'
+                  }
+    upload_url = 'https://' + logtype_config['uploadDomain'] + '/upload'
     request = urllib.request.Request(upload_url, headers=header_obj)
     s247_response = urllib.request.urlopen(request, data=gzipped_parsed_lines)
     dict_responseHeaders = dict(s247_response.getheaders())
     if s247_response and s247_response.status == 200:
         logging.info('%s :All logs are uploaded to site24x7', dict_responseHeaders['x-uploadid'])
     else:
-        logging.info('%s :Problem in uploading to site24x7 status %s, Reason : %s', dict_responseHeaders['x-uploadid'], s247_response.status, s247_response.read())
+        logging.info('%s :Problem in uploading to site24x7 status %s, Reason : %s', dict_responseHeaders['x-uploadid'],
+                     s247_response.status, s247_response.read())
+
 
 def main(eventMessages: func.EventHubEvent):
     try:
@@ -89,19 +102,22 @@ def main(eventMessages: func.EventHubEvent):
         if type(eventMessages) != list:
             eventMessages = [eventMessages]
             cardinality = 'one'
+        logging.debug("S247-DEBUG : cardinality : %r",cardinality)
         for eventMessage in eventMessages:
+            logging.debug("S247-DEBUG : eventMessage : %r", eventMessage)
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
+            logging.debug("S247-DEBUG : payload : %r", payload)
             log_events = payload['records'] if cardinality == 'many' else payload[0]['records']
-            print("log event : ",log_events)
-
+            logging.debug("S247-DEBUG : log_events : %r", log_events)
             log_category = ''
-            if 'category' in log_events[0] or 'Category' in log_events[0]: 
-                log_category = (log_events[0]['category' if 'category' in log_events[0] else 'Category']).replace('-', '_')
-                print("log_category" + " : "+ log_category)
-                log_category = 'S247_'+log_category
+            if 'category' in log_events[0] or 'Category' in log_events[0]:
+                log_category = (log_events[0]['category' if 'category' in log_events[0] else 'Category']).replace('-',
+                                                                                                                  '_')
+                logging.debug("log_category" + " : " + log_category)
+                log_category = 'S247_' + log_category
 
             if log_category in os.environ:
-                print("log_category found in input arguments")
+                logging.debug("log_category found in input arguments : %r", log_category)
                 logtype_config = json.loads(b64decode(os.environ[log_category]).decode('utf-8'))
                 s247_datetime_format_string = logtype_config['dateFormat']
             elif 'logTypeConfig' in os.environ:
@@ -109,10 +125,11 @@ def main(eventMessages: func.EventHubEvent):
                 s247_datetime_format_string = logtype_config['dateFormat']
             else:
                 return
-    
+
+            logging.debug("S247-DEBUG : logtype_config : %r", logtype_config)
             if 'jsonPath' in logtype_config:
                 parsed_lines, log_size = json_log_parser(log_events)
-    
+
             if parsed_lines:
                 gzipped_parsed_lines = gzip.compress(json.dumps(parsed_lines).encode())
                 send_logs_to_s247(gzipped_parsed_lines, log_size)
