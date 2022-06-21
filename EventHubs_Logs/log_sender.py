@@ -5,8 +5,8 @@ from base64 import b64decode
 logtype_config = None
 s247_datetime_format_string = None
 
-if 'debugMode' in os.environ and os.environ['debugMode']:
-    logging.getLogger().setLevel(logging.DEBUG)
+#if 'debugMode' in os.environ and os.environ['debugMode']:
+logging.getLogger().setLevel(logging.DEBUG)
 
 def get_timestamp(datetime_string):
     try:
