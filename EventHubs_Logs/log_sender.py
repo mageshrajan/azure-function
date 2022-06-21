@@ -53,7 +53,6 @@ def get_json_value(obj, key, datatype=None):
 def json_log_parser(lines_read):
     log_size = 0
     parsed_lines = []
-    logging.debug("S247-DEBUG : type(log_events) : %r", type(log_events))
     for event_obj in lines_read:
         try:
             logging.debug("S247-DEBUG : event_obj : %r", event_obj)
