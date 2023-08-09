@@ -132,7 +132,7 @@
                       "[resourceId('Microsoft.Web/sites/', variables('functionName'))]"
                     ],
                     "properties": {
-                        "RepoUrl": "https://github.com/magesh007/azure-function.git",
+                        "RepoUrl": "https://github.com/mageshrajan/azure-function.git",
                         "branch": "master",
                         "publishRunbook": true,
                         "IsManualIntegration": true
