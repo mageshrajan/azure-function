@@ -65,6 +65,7 @@ def json_log_parser(lines_read):
     parsed_lines = []
     for event_obj in lines_read:
         try:
+            print('event_obj :'+str(event_obj))
             formatted_line = {}
             json_log_size = 0
             for path_obj in logtype_config['jsonPath']:
@@ -177,7 +178,6 @@ def main(eventMessages: func.EventHubEvent):
         if type(eventMessages) != list:
             eventMessages = [eventMessages]
             cardinality = 'one'
-        print('eventMessages : '+eventMessages)
         for eventMessage in eventMessages:
             payload = json.loads(eventMessage.get_body().decode('utf-8'))
             log_events = payload['records'] if cardinality == 'many' else payload[0]['records']
