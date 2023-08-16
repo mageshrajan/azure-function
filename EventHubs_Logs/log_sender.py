@@ -42,9 +42,9 @@ def get_json_value(obj, key, datatype=None):
             child_obj = obj[key]
             if type(child_obj) is str:
                 try:
-                    child_obj = json.loads(child_obj.replace('\\', '\\\\'), strict=False)
+                    child_obj = json.loads(child_obj, strict=False)
                 except Exception:
-                    child_obj = ast.literal_eval(child_obj.replace('\\', '\\\\'))
+                    child_obj = json.loads(child_obj.replace('\\', '\\\\'), strict=False)
 
             for child_key in child_obj:
                 arr_json.append({'key' : child_key, 'value': str(child_obj[child_key])})
