@@ -56,7 +56,10 @@ def get_json_value(obj, key, datatype=None):
         child_key = key[key.index('.')+1:]
         child_obj = obj[parent_key if parent_key in obj else parent_key.capitalize()]
         if type(child_obj) is str:
-            child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
+            try:
+                child_obj = json.loads(child_obj, strict=False)
+            except Exception:
+                child_obj = json.loads(child_obj.replace('\\','\\\\'), strict=False)
         return get_json_value(child_obj, child_key)
 
 def json_log_parser(lines_read):
